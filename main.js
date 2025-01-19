@@ -234,23 +234,76 @@ function displayMerchantItems(event) {
 
 function getMerchantCoupons(event) {
   let merchantId = event.target.closest("article").id.split('-')[1]
+
+  if (!merchantId) {
+    console.error('Merchant ID not found.');
+    return;
+  }
+
   console.log("Merchant ID:", merchantId)
 
   fetchData(`merchants/${merchantId}`)
   .then(couponData => {
-    console.log("Coupon data from fetch:", couponData)
-    displayMerchantCoupons(couponData);
-  })
-}
+    console.log("Coupon data from fetch:", couponData);
 
+// error debugging to make sure data is avail and has the attributes we need
+  if (couponData && couponData.data && couponData.data.attributes) {
+    const couponsCount = couponData.data.attributes.coupons_count;
+
+    if (couponsCount > 0) {
+      fetchData(`merchants/${merchantId}/coupons`)
+        .then(coupons => {
+        displayMerchantCoupons(coupons);
+        })
+        .catch(error => {
+          console.error("Error fetching actual coupons:", error);
+          couponsView.innerHTML = `<p>Failed to load coupons.</p>`;
+        });
+      } else {
+      displayMerchantCoupons([]);
+    }
+  } else {
+    console.error('Invalid coupon data structure:', couponData);
+    couponsView.innerHTML = `<p>No coupons available for this merchant.</p>`;
+  }
+  });
+}
 function displayMerchantCoupons(coupons) {
   show([couponsView])
   hide([merchantsView, itemsView])
 
-  couponsView.innerHTML = `
-    <p>Coupon data will go here.</p>
-  `
+  couponsView.innerHTML = ''
+  if (coupons.length === 0) {
+    couponsView.innerHTML = `<p>No coupons available for this merchant.</p>`
+    return
+  }
+
+  let couponsList = '<ul>'
+  // feeling good about the code below!
+  coupons['data'].forEach(coupon => {
+    let discountText = ''; 
+  
+    if (coupon['attributes'].percent_off) {
+      discountText = `${coupon['attributes'].percent_off}% off`; 
+    } else if (coupon['attributes'].dollar_off) {
+      discountText = `$${coupon['attributes'].dollar_off} off`; 
+    } 
+
+    couponsList += `
+      <li class="coupon">
+        <h3>${coupon['attributes'].name}</h3>
+        <p><strong>Code:</strong> ${coupon['attributes'].code}</p>
+        <p><strong>Discount:</strong> ${discountText}</p>
+        <p><strong>Coupon Status:</strong> ${coupon['attributes'].status}</p>
+        </br>
+      </li>
+    `;
+  });
+  couponsList += '</ul>'
+
+  couponsView.innerHTML = couponsList
 }
+
 
 //Helper Functions
 function show(elements) {
