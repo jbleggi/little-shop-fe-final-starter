@@ -139,12 +139,12 @@ function submitMerchant(event) {
 
 // Functions that control the view 
 function showMerchantsView() {
-  showingText.innerText = "All Merchants"
-  addRemoveActiveNav(merchantsNavButton, itemsNavButton)
-  addNewButton.dataset.state = 'merchant'
-  show([merchantsView, addNewButton])
-  hide([itemsView])
-  displayMerchants(merchants)
+  showingText.innerText = "All Merchants";
+  addRemoveActiveNav(merchantsNavButton, itemsNavButton);
+  addNewButton.dataset.state = 'merchant';
+  show([merchantsView, addNewButton]);
+  hide([itemsView, couponsView]);
+  displayMerchants(merchants);
 }
 
 function showItemsView() {
@@ -163,6 +163,15 @@ function showMerchantItemsView(id, items) {
   addRemoveActiveNav(itemsNavButton, merchantsNavButton)
   addNewButton.dataset.state = 'item'
   displayItems(items)
+}
+
+function showMerchantCouponsView(id, coupons) {
+  showingText.innerText = `All Coupons for Merchant #${id}`
+  show([couponsView])
+  hide([merchantsView, addNewButton, itemsView])
+  addRemoveActiveNav(itemsNavButton, merchantsNavButton)
+  addNewButton.dataset.state = 'coupon'
+  displayMerchantCoupons(coupons)
 }
 
 // Functions that add data to the DOM
@@ -250,6 +259,12 @@ function getMerchantCoupons(event) {
   if (couponData && couponData.data && couponData.data.attributes) {
     const couponsCount = couponData.data.attributes.coupons_count;
 
+    // Update the "Showing" text
+    showingText.innerText = `All Coupons for Merchant #${merchantId}`;
+
+    // Hide the "Add New Merchant" button on the Coupons view
+    hide([addNewButton]);
+
     if (couponsCount > 0) {
       fetchData(`merchants/${merchantId}/coupons`)
         .then(coupons => {
@@ -260,14 +275,14 @@ function getMerchantCoupons(event) {
           couponsView.innerHTML = `<p>Failed to load coupons.</p>`;
         });
       } else {
-      displayMerchantCoupons([]);
+      displayMerchantCoupons([]); 
     }
   } else {
     console.error('Invalid coupon data structure:', couponData);
-    couponsView.innerHTML = `<p>No coupons available for this merchant.</p>`;
-  }
+    couponsView.innerHTML = `<p>No coupons available for this merchant.</p>`; }
   });
 }
+
 function displayMerchantCoupons(coupons) {
   show([couponsView])
   hide([merchantsView, itemsView])
@@ -288,7 +303,7 @@ function displayMerchantCoupons(coupons) {
     } else if (coupon['attributes'].dollar_off) {
       discountText = `$${coupon['attributes'].dollar_off} off`; 
     } 
-
+ 
     couponsList += `
       <li class="coupon">
         <h3>${coupon['attributes'].name}</h3>
